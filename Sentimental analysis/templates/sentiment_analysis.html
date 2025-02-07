@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Amazon Product Reviews Sentiment Analysis</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='sentimental_analysis_css.css') }}">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600&display=swap" rel="stylesheet">
+</head>
+<body>
+    <header>
+        <h1>Product Reviews Sentiment Analysis</h1>
+    </header>
+    <main>
+        <section class="input-section">
+            <h2>Analyze Your Review</h2>
+            <form id="review-form">
+                <div class="form-group">
+                    <label for="review-text">Product Review</label>
+                    <textarea id="review-text" placeholder="Enter your Amazon product review here..."></textarea>
+                    <small class="error-message" id="error-message"></small>
+                </div>
+
+                <div class="button-group">
+                    <button type="submit" id="analyze-button"> Analyze Sentiment</button>
+                    <div id="loader"></div> 
+                </div>
+
+                <!-- Sentiment result will be displayed here beside the button -->
+                <div id="sentiment-result"></div>
+            </form>
+        </section>
+    </main>
+    <footer>
+        <p>&copy; 2024 Sentiment Analysis Tool</p>
+    </footer>
+
+    <script>
+        document.getElementById('review-form').addEventListener('submit', function(event) {
+            event.preventDefault();  
+
+            const reviewText = document.getElementById('review-text').value.trim();
+            const errorMessage = document.getElementById('error-message');
+            const sentimentResult = document.getElementById('sentiment-result');
+            const loader = document.getElementById('loader');
+
+            if (reviewText === '') {
+                errorMessage.innerText = "Please enter a review.";
+                errorMessage.style.display = 'block';  // Show error message if review is empty
+                sentimentResult.innerText = '';
+                return;
+            }
+
+            errorMessage.style.display = 'none';  // Hide error message
+            sentimentResult.innerText = '';
+            loader.style.display = 'block';  
+           
+            fetch('/predict', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ review: reviewText }),  // Send review text as JSON
+            })
+            .then(response => response.json())  // Parse the JSON response
+            .then(data => {
+                loader.style.display = 'none';  // Hide the loader when analysis is done
+
+                if (data.error) {
+                    sentimentResult.innerText = `Error: ${data.error}`;
+                    sentimentResult.style.color = '#e74c3c';  // Show error message in red
+                } else {
+                    // Display the sentiment result
+                    if (data.sentiment === 'positive') {
+                        sentimentResult.innerText = 'Sentiment: Positive';
+                        sentimentResult.style.color = '#2ecc71';  // Green for positive
+                    } else if (data.sentiment === 'neutral') {
+                        sentimentResult.innerText = 'Sentiment: Neutral';
+                        sentimentResult.style.color = '#f39c12';  // Orange for neutral
+                    } else {
+                        sentimentResult.innerText = 'Sentiment: Negative';
+                        sentimentResult.style.color = '#e74c3c';  // Red for negative
+                    }
+                }
+            })
+            .catch(error => {
+                loader.style.display = 'none';  // Hide the loader
+                sentimentResult.innerText = `Error: Unable to analyze sentiment. Please try again.`;
+                sentimentResult.style.color = '#e74c3c';  // Show error message in red
+            });
+        });
+    </script>
+</body>
+</html>
